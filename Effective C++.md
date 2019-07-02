@@ -13,4 +13,15 @@ grammar_cjkRuby: true
 当我们使用常量代替宏时候有两点：
 
  1. 宏定义的字符串必需是被两个const修饰的指针，如：`const char* const authorName = "helloWorld"; 或者C++：const std::string authorName("helloWorld");`
- 2. 就是class的专属常量
+ 2. 就是class的专属常量。为了将常量的作用域限制于class内，你必须让它成为class的一个成员；而为确保此常量至多只有一份实体，你必须让它成为一个static成员：
+
+``` c++
+class GamePlayer {
+private:	
+	static const int Number = 5;	//常量声明式
+	int scores[Number];					//使用该常量
+	....
+};
+```
+但是注意这个是声明时候获取到一个参数5，如果你取某个class专属常量的地址，或纵使你不取其地址而你的编译器却坚持要看到一个定义式，你就必须另外提供定义式：`const int GamePlayer::NumTurns;`
+因为在声明时候我们给了初值，则定义时候不能在带初值了。这个就会在一些旧的编译器上它不允许你
