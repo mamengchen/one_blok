@@ -102,4 +102,48 @@ std::vector<int>::const_iterator cIter = vec.begin();
 class Rational {....};
 const Rational operator* (const Rational& lhs, const Rational& rhs);
 ```
-这假如说我们定义的整数类，它里面重载了乘法运算符，我们定义了三个Rational类型的对象：a, b, c 然后我们使用a * b = c 在平常看来这没有问题，但是在程序中，如果这样写了，它就说明你a * b得到的不是一个常量，而是一个变量，把c在赋给它，这样的代码直截了当就是不合法。而一个“良好的用户自定义类型”的特征是它们避免无端地与内置类型不兼容
+这假如说我们定义的整数类，它里面重载了乘法运算符，我们定义了三个Rational类型的对象：a, b, c 然后我们使用a * b = c 在平常看来这没有问题，但是在程序中，如果这样写了，==它就说明你a * b得到的不是一个常量，而是一个变量，把c在赋给它 #F44336==，这样的代码直截了当就是不合法。而一个“良好的用户自定义类型”的特征是它们避免无端地与内置类型不兼容，因此允许对两值乘积做赋值动作就是个错误的做法，
+
+##### const成员函数
+将const实施于成员函数的目的，是为了确认该成员函数可作用于const对象身上。这一类成员函数之所以重要具有两个理由：
+
+ - 第一：它们使class接口比较容易被理解（就是得知那个函数可以改动对象内容，那些不行）
+ - 第二：它们使操作const对象成为可能，改善C++程序效率的一个根本办法是以==常引用 #F44336==方式传递对象，而此技术可行的前提是，我们有const成员函数可用来处理取到const对象。
+
+==两个成员函数如果只是常量性不同是可以被重载的： #4CAF50==
+
+``` c++
+#include <iostream>
+using namespace std;
+
+class TextBlock {
+public:
+	TextBlock(std::string my_str) : text(my_str)
+	{}
+	const char& operator[](std::size_t position) const
+	{
+		cout << "const_operator[]" << endl;
+		return text[position];
+	}
+
+	char& operator[](std::size_t position)
+	{
+		cout << "operator[]" << endl;
+		return text[position];
+	}
+
+private:
+	std::string text;
+};
+
+int main()
+{
+	TextBlock tb("Hello");
+	std::cout << tb[0] << std::endl;
+	const TextBlock ctb("World");
+	std::cout << ctb[0] << std::endl;
+	return 0;
+}
+```
+![enter description here](./images/1562254676710.png)
+其中我们可以看到，我们可以访问这个值，但是如果对于`ctb[0] = 'X';`程序就会报错，==错误起因于企图对一个“由const版的operator[]返回”的const char& 施行赋值动作。 #F44336==
