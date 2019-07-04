@@ -75,4 +75,31 @@ inline void callWithMax(const T& a, const T& b)
 这里因为加入了限制条件const，所有就不允许变量改变，这样就保证了，程序的运算出错大大减少。
 
 #### 尽可能使用const
-关键字const，你可以用它在class外部修饰global或namespace作用域中的常量，或修饰文件、函数、或区块作用域中被声明为static的对象。你也可以用它修饰class内部的static和non-static成员变量。面对指针
+关键字const，你可以用它在class外部修饰global或namespace作用域中的常量，或修饰文件、函数、或区块作用域中被声明为static的对象。你也可以用它修饰class内部的static和non-static成员变量。面对指针，你也可以指出指针自身，指针所指物，或两者都是const：
+
+``` c++
+char qreeting[] = "hallo";
+char* p = greeting;										//正常指针
+const char* p = greeting;							//指针可以改变指向，但是不能改变数据的值
+char* const p = greeting;							//指针不能改变指向，但是数据可以改变值
+const char* const p = greeting;					//两个都不可以改变
+```
+其中`const char* p与char const * p`表示的意思是一样的，其中C++STL中迭代器就是以指针为根据塑膜出来的，所有如果你希望一个迭代器所指的东西不可改变，你就需要的是const_iterator：
+
+``` c++
+std::vector<int> vec;
+...
+const std::vector<int>::iterator iter = vec.begin();
+*iter = 10;
+++iter;					//有问题
+std::vector<int>::const_iterator cIter = vec.begin();
+*cIter = 10;		 //有问题
+++cIter;
+```
+下面有个一个例子体现出了const的最具威力的应用：
+
+``` c++
+class Rational {....};
+const Rational operator* (const Rational& lhs, const Rational& rhs);
+```
+这假如说我们定义的整数类，它里面重载了乘法运算符，我们定义了三个Rational类型的对象：a, b, c 然后我们使用a * b = c 在平常看来这没有问题，但是在程序中，如果这样写了，它就说明你a * b得到的不是一个常量，而是一个变量，把c在赋给它，这样的代码直截了当就是不合法。而一个“良好的用户自定义类型”的特征是它们避免无端地与内置类型不兼容
