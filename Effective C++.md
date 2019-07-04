@@ -147,3 +147,77 @@ int main()
 ```
 ![enter description here](./images/1562254676710.png)
 其中我们可以看到，我们可以访问这个值，但是如果对于`ctb[0] = 'X';`程序就会报错，==错误起因于企图对一个“由const版的operator[]返回”的const char& 施行赋值动作。 #F44336==
+
+**const的两个流行概念** ==一个是bitwise constness #9C27B0==（主张的就是成员函数只有在不更改对象之中任何成员变量时才可以说是const），==另一个logical constness #9C27B0==（意思是说一个const成员函数可以修改它所处理的对象内的某些bits，但只有在客户端侦测不出的情况下才得如此。）
+
+> 说一个例子是对不是十足具备const性质却能通过bitwise测试。一个更改了“指针所指物”的成员函数不能算是const，==但是如果只要指针隶属于对象 #9C27B0==，那么此函数就不违背bitwise const不会引发编译器异常.
+
+``` c++
+class CTextBlock {
+public:
+	...
+	char& operator[] (std::size_t position) const
+	{
+		return pText[position];
+	}
+
+private:
+	char* pText
+};
+```
+
+这段代码并没有更改pText。于是编译器会为operator[]产除目标码。但是经过下面的操作之后，就违背了bitwise const：
+
+``` c++
+const CTextBlock ctb("Hello");
+char* pc = &ctb[0];
+*pc = 'J'
+```
+这样这个对象中的成员变量所指的是这样一个内容:Jello。当然现在C++不支持这样做了。但是在面对现实你希望它是个常对象，但是里面有一些数据确实你希望他改变例如下：
+
+``` c++
+class CText {
+public:
+
+	std::size_t length() const;
+private:
+	char* pText;
+	std::size_t textLength;
+	bool lengthIsValid;
+};
+
+std::size_t CText::length() const
+{
+	if (!lengthIsValid)
+	{
+		textLength = std::strlen(pText);
+		lengthIsValid = true;
+	}
+	return textLength;
+}
+```
+如果我们确实想修改这两笔数据对const CText对象而言虽然可接受，但编译器不同意。所有在C++中使用一个关键字：mutable释放点成员变量的bitwise constness约束：
+
+``` c++
+class CText {
+public:
+
+	std::size_t length() const;
+private:
+	char* pText;
+	mutable std::size_t textLength;
+	mutable bool lengthIsValid;
+};
+
+std::size_t CText::length() const
+{
+	if (!lengthIsValid)
+	{
+		textLength = std::strlen(pText);
+		lengthIsValid = true;
+	}
+	return textLength;
+}
+```
+
+
