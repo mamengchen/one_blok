@@ -78,5 +78,254 @@ Proactor模式：
 ![20190426015331685](./images/20190426015331685.png)
 
 
- 
+客户端：
+
+``` c++
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/epoll.h>
+#include <event.h>
+#include <sys/time.h>
+
+#define MAXFD 1024
+
+struct event *arr[MAXFD] = { 0 };
+
+// 添加事件处理器到arr数组中，将事件处理器和句柄绑定
+void arr_add( int fd, struct event *ev )
+{
+    if ( fd < 0 || fd >= MAXFD )
+    {
+        return;
+    }
+    arr[fd] = ev;
+}
+
+/*
+ * 从arr数组中删除句柄所指定的事件处理器，
+ * 并返回该事件处理器上处理函数
+ *
+ */
+struct event *arr_find_ev( int fd )
+{
+    if ( fd < 0 || fd >= MAXFD )
+    {
+        return NULL;
+    }
+    struct event *ptr = arr[fd];
+    arr[fd] = 0;
+    return ptr;
+}
+
+void recv_cb( int fd, short ev, void *arg )
+{
+    //处理读事件
+    if ( ev & EV_READ )
+    {
+        char buff[128] = { 0 };
+        int n = recv( fd, buff, 127, 0 );
+        if ( n <= 0 )
+        {
+            // 若没有从libevent中删除，则会反复循环，
+            // 因此，我们必须处理当客户端关闭时，从
+            // libevent中将事件删除
+            event_free(arr_find_ev(fd));
+            printf("one client over\n");
+            return;
+        }
+        printf("buff(%d) = %s\n", fd, buff);
+        send( fd, "OK", 2, 0 );
+    }
+}
+
+void accept_cb( int fd, short ev, void *arg )
+{
+    //处理新连接，每次有新连接到来时，就会调用accept_cb
+    if ( ev & EV_READ )
+    {
+        struct event_base *base = (struct event_base*) arg;
+        struct sockaddr_in caddr;
+        unsigned int len = sizeof(caddr);
+
+        //获得连接套接字
+        
+        int connfd = ::accept( fd, (struct sockaddr *) &caddr, &len );
+        if ( connfd < 0 )
+        {
+            return;
+        }
+
+        printf("accept connfd = %d\n", connfd);
+
+        struct event *c_ev = event_new( base, connfd, EV_READ | EV_PERSIST, recv_cb, NULL );
+        if (c_ev == NULL)
+        {
+            close(connfd);
+            return;
+        }
+       event_add(c_ev, NULL);
+       arr_add( connfd, c_ev );
+    }
+}
+
+
+int create_sockfd()
+{
+    int sockfd = socket( AF_INET, SOCK_STREAM, 0 );
+    if ( sockfd == -1 )
+    {
+        return -1;
+    }
+
+    struct sockaddr_in saddr;
+    bzero(&saddr, sizeof(saddr));
+    saddr.sin_family = AF_INET;
+    saddr.sin_port = htons(6000);
+    saddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    int res = bind( sockfd, (struct sockaddr*)&saddr, sizeof(saddr) );
+    if (res == -1)
+    {
+        return -1;
+    }
+    listen( sockfd, 5 );
+    return sockfd;
+}
+
+int main()
+{
+    int sockfd = create_sockfd();
+    assert( sockfd != -1 );
+
+    struct event_base * base = event_init();
+    assert( base != NULL );
+
+    struct event * sock_ev = event_new( base, sockfd, EV_READ | EV_PERSIST, accept_cb, base );
+    assert( sock_ev != NULL );
+    event_add( sock_ev, NULL );
+    event_base_free(base);
+    close(sockfd);
+    exit(0);
+}
+
+```
+
+服务器：
+``` c++
+#include<stdio.h>
+#include<string.h>
+#include<errno.h>
+#include<unistd.h>
+#include<event.h>
+
+void accept_cb( int fd, short events, void* arg );
+
+void socket_read_cb( int fd, short events, void* arg );
+
+int tcp_server_init( int port, int listen_num );
+
+int main( int argc, char** argv )
+{
+    int listener = tcp_server_init(9999, 10);
+    if ( listener == -1 )
+    {
+        perror( "tcp_server_init error" );
+        return -1;
+    }
+
+    struct event_base* base = event_base_new();
+
+    struct event* ev_listen = event_new( base, listener, EV_READ | EV_PERSIST,
+                                         accept_cb, base);
+    event_add( ev_listen, NULL );
+
+    event_base_dispatch( base );
+    return 0;
+}
+
+void accept_cb( int fd, short events, void* arg )
+{
+    evutil_socket_t sockfd;
+    struct sockaddr_in client;
+    socklen_t len = sizeof(client);
+    
+    sockfd = ::accept(fd, ( struct sockaddr* )&client, &len);
+    evutil_make_socket_nonblocking(sockfd);
+
+    printf( "accept a client %d\n", sockfd );
+    struct event_base* base = (event_base*)arg;
+
+    struct event* ev = event_new( NULL, -1, 0, NULL, NULL );
+
+    event_assign(ev, base, sockfd, EV_READ | EV_PERSIST, 
+                 socket_read_cb, (void*)ev);
+    event_add(ev, NULL);
+}
+
+void socket_read_cb( int fd, short events, void *arg )
+{
+    char msg[4096];
+    struct event *ev = (struct event*)arg;
+    int len = read(fd, msg, sizeof(msg) - 1);
+
+    if (len <= 0)
+    {
+        printf( "some error happen when read\n" );
+        event_free(ev);
+        close(fd);
+        return;
+    }
+
+    msg[len] = '\0';
+    printf( "recv the client msg: %s", msg );
+
+    char reply_msg[4096] = "I have  recvieced the msg: ";
+    strcat(reply_msg + strlen(reply_msg), msg);
+    write( fd, reply_msg, strlen(reply_msg) );
+}
+
+typedef struct sockaddr SA;
+int tcp_server_init( int port, int listen_num )
+{
+    int errno_save;
+    evutil_socket_t listener;
+
+    listener = ::socket( AF_INET, SOCK_STREAM, 0 );
+    if ( listener == -1 )
+        return -1;
+
+    evutil_make_listen_socket_reuseable( listener );
+
+    struct sockaddr_in sin;
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(port);
+    sin.sin_addr.s_addr = 0;
+
+    if ( ::bind(listener, (SA*)&sin, sizeof(sin)) < 0 )
+    {
+        goto error;
+    }
+
+    if ( ::listen( listener, listen_num ) < 0 )
+    {
+        goto error;
+    }
+    evutil_make_socket_nonblocking(listener);
+    return listener;
+error:
+    errno_save = errno;
+    evutil_closesocket(listener);
+    errno = errno_save;
+    return -1;
+}
+
+```
+
+ ![enter description here](./images/1562860320486.png)
  
