@@ -500,7 +500,7 @@ int main(int argc, char** argv)
 
 	struct event_base* base = event_base_new();
 
-	//ͭ¼Ӽ፽¿ͻ§¶̇숳l½Ԋ¼þ
+
 	struct event* ev_listen = event_new(base, listener, EV_READ | EV_PERSIST,
 		accept_cb, base);
 
@@ -560,7 +560,7 @@ void event_cb(struct bufferevent *bev, short event, void *arg)
 	else if (event & BEV_EVENT_ERROR)
 		printf("some other error\n");
 
-	//֢½«ؔ¶¯close͗½ԗֺ̦ree¶´»º³戸
+
 	bufferevent_free(bev);
 }
 
@@ -575,7 +575,7 @@ int tcp_server_init(int port, int listen_num)
 	if (listener == -1)
     	return -1;
 
-	//Պѭ¶ൎ°󶩍¬һ¸򶙖·¡£Ҫԃ՚socketº̢ind֮¼
+
 	evutil_make_listen_socket_reuseable(listener);
 
 	struct sockaddr_in sin;
