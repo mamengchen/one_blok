@@ -607,3 +607,200 @@ error:
 
  
  ![enter description here](./images/1563112396138.png)
+ 
+ #### 高级服务器
+ 
+ 客户端：
+ 
+
+``` c++
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <unistd.h>
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include <event.h>
+#include <event2/util.h>
+#include <event2/buffer.h>
+#include <event2/util.h>
+
+int tcp_connect_server( const char* server_ip, int port );
+
+void cmd_msg_cb( int fd, short events, void* arg );
+
+void server_msg_cb( struct bufferevent* bev, void* arg );
+
+void event_cb( struct bufferevent* bev, short event, void* arg );
+
+int main( int argc, char** argv )
+{
+    if ( argc < 3 )
+    {
+        printf( "please input 2 parameter\n" );
+        return -1;
+    }
+
+    struct event_base* base = event_base_new();
+
+    struct bufferevent* bev = bufferevent_socket_new( base, -1, BEV_OPT_CLOSE_ON_FREE );
+
+    struct event* ev_cmd = event_new( base, STDIN_FILENO, EV_READ | EV_PERSIST, cmd_msg_cb, (void*)bev );
+
+    event_add( ev_cmd, NULL );
+    struct sockaddr_in server_addr;
+    memset( &server_addr, 0, sizeof(server_addr) );
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons( atoi(argv[2]) );
+    inet_aton(argv[1], &server_addr.sin_addr);
+
+    bufferevent_socket_connect( bev, (struct sockaddr*)&server_addr, sizeof(server_addr) );
+
+    bufferevent_setcb(bev, server_msg_cb, NULL, event_cb, (void *)ev_cmd);
+    bufferevent_enable(bev, EV_READ | EV_PERSIST);
+
+    event_base_dispatch(base);
+
+    printf( "finished\n" );
+    return 0;
+}
+
+void cmd_msg_cb( int fd, short events, void* arg )
+{
+    char msg[1024];
+    
+    int ret = read(fd, msg, sizeof(msg));
+    if ( ret < 0 )
+    {
+        perror( "read fail" );
+        exit(1);
+    }
+
+    struct bufferevent* bev = ( struct bufferevent* )arg;
+
+    bufferevent_write( bev, msg, ret );
+}
+
+void server_msg_cb( struct bufferevent* bev, void* arg )
+{
+    char msg[1024];
+
+    size_t len = bufferevent_read( bev, msg, sizeof(msg) );
+    msg[len] = '\0';
+
+    printf( "recv %s from server\n", msg );
+}
+
+void event_cb( struct bufferevent * bev, short event, void *arg )
+{
+    if ( event & BEV_EVENT_EOF )
+    {
+        printf( "connection closed\n" );
+    }
+    else if ( event & BEV_EVENT_ERROR )
+    {
+        printf( "some other error\n" );
+    }
+    else if ( event & BEV_EVENT_CONNECTED )
+    {
+        printf( "the client has connection to server\n" );
+        return;
+    }
+
+    bufferevent_free(bev);
+
+    struct event* ev = ( struct event* )arg;
+    event_free(ev);
+}
+```
+
+服务器：
+
+``` c++
+#include <iostream>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <stdio.h>
+#include <string.h>
+
+#include <event.h>
+#include <event2/listener.h>
+#include <event2/bufferevent.h>
+#include <event2/thread.h>
+
+void listener_cb( evconnlistener * listener, evutil_socket_t fd, struct sockaddr * sock, int socklen, void * arg );
+
+void socket_read_cb( bufferevent * bev, void *arg );
+
+void socket_event_cb( bufferevent * bev, short events, void *arg );
+
+int main()
+{
+    struct sockaddr_in sin;
+    memset( &sin, 0, sizeof( struct sockaddr_in ) );
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(9999);
+
+    event_base * base = event_base_new();
+    evconnlistener *listener
+        = evconnlistener_new_bind( base, listener_cb, base, 
+                                   LEV_OPT_REUSEABLE | LEV_OPT_CLOSE_ON_FREE, 
+                                   10, ( struct sockaddr* )&sin, sizeof( struct sockaddr_in ));
+    event_base_dispatch(base);
+    evconnlistener_free(listener);
+    event_base_free(base);
+
+    return 0;
+}
+
+
+void listener_cb( evconnlistener * listener, evutil_socket_t fd, struct sockaddr * sock, int socklen, void * arg )
+{
+    printf( "accept a client %d\n", fd );
+    
+    event_base * base = (event_base*)arg;
+
+    bufferevent *bev = bufferevent_socket_new( base, fd, BEV_OPT_CLOSE_ON_FREE );
+
+    bufferevent_setcb(bev, socket_read_cb, NULL, socket_event_cb, NULL);
+
+    bufferevent_enable( bev, EV_READ | EV_PERSIST );
+}
+
+void socket_read_cb( bufferevent * bev, void *arg )
+{
+    char msg[4096];
+
+    size_t len = bufferevent_read( bev, msg, sizeof(msg)-1 );
+
+    msg[len] = '\0';
+
+    printf( "server read the data %s\n", msg );
+
+    char reply[] = "I has read you data";
+    bufferevent_write( bev, reply, strlen(reply) );
+}
+
+void socket_event_cb( bufferevent * bev, short events, void *arg )
+{
+    if (events & BEV_EVENT_EOF)
+    {
+        printf( "connection closed\n" );
+    }
+    else if (events & BEV_EVENT_ERROR)
+    {
+        printf( "some other error\n" );
+    }
+    bufferevent_free(bev);
+}
+```
+
+![enter description here](./images/1563288427844.png)
