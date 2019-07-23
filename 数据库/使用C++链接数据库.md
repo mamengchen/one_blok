@@ -165,3 +165,24 @@ for item in rest:
 ```
 ![enter description here](./images/1563876849587.png)
 ![enter description here](./images/1563876868536.png)
+
+
+
+```python
+    def add_one(self):
+        # 准备SQL
+        num = 100400
+        sql = "insert into test (name, num) value (%s, %s);"
+        # 获取连接和cursor
+        cursor = self.conn.cursor()
+        # 执行sql
+        # 提交数据到数据库
+        cursor.execute(sql, ('caocao', num, ))
+        # 提交事务
+        self.conn.commit()
+        # 关闭cursor和链接
+        cursor.close()
+        self.close_conn()
+
+```
+![enter description here](./images/1563880253283.png)
