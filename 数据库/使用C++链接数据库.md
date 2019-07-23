@@ -68,3 +68,100 @@ MySQL操作的官方文档：[MySQL官方文档](https://dev.mysql.com/doc/refma
 
 下面是比较常用的几个C++ 操作数据库的api函数：
 **登录MySQL：mysql_init()，mysql_real_connect()**
+
+
+
+
+
+
+
+
+#### python 操作数据库
+直接上代码：
+对于数据的查询，这里fetchone()：是对单条数据的查询，fetchall()：是对多条数据的查询
+```python
+import MySQLdb
+
+# try:
+#     conn = MySQLdb.connect(
+#         host='127.0.0.1',
+#         user='root',
+#         passwd='',
+#         db='test',
+#         port=3306,
+#         charset='utf8'
+#     )
+# except MySQLdb.Error as e:
+#     print(f'Error: {e}')
+# 
+# cursor = conn.cursor()
+# cursor.execute('select * from test;')
+# rest = cursor.fetchone()
+# print(rest)
+# 
+# conn.close()
+
+
+class mysqlsearch(object):
+    def __init__(self):
+        self.get_conn()
+
+    def get_conn(self):
+        try:
+            self.conn = MySQLdb.connect(
+                host='127.0.0.1',
+                user='root',
+                passwd='',
+                db='test',
+                port=3306,
+                charset='utf8'
+            )
+        except MySQLdb.Error as e:
+            print(f"error: {e}")
+    
+    def close_conn(self):
+        try:
+            if self.conn:
+                self.conn.close()
+        except MySQLdb.Error as e:
+            print(f'Error: {e}')
+
+    def get_one(self):
+        sql = 'select * from test where name = %s;'
+        cursor = self.conn.cursor()
+        
+        # print(dir(cursor))
+        # print(cursor.description)
+        cursor.execute(sql, ('mamengchen', ))
+        rest = dict(zip([k[0] for k in cursor.description], cursor.fetchone()))
+        print(rest)
+
+        cursor.close();
+        self.close_conn()
+        return rest;
+
+    def get_more(self):
+        sql = 'select * from test where name = %s;'
+        cursor = self.conn.cursor()
+        cursor.execute(sql, ('mamengchen', ))
+        rest = [dict(zip([k[0] for k in cursor.description], row)) 
+                for row in cursor.fetchall()]
+
+        for item in rest:
+            print(item)
+        cursor.close()
+        self.close_conn()
+        return rest
+
+
+obj = mysqlsearch()
+# rest = obj.get_one()
+# print(rest['name'])
+rest = obj.get_more()
+
+for item in rest:
+    print(item['num'])
+
+```
+![enter description here](./images/1563876849587.png)
+![enter description here](./images/1563876868536.png)
