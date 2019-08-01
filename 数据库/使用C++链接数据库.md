@@ -153,7 +153,6 @@ class mysqlsearch(object):
         self.close_conn()
         return rest
 
-
 obj = mysqlsearch()
 # rest = obj.get_one()
 # print(rest['name'])
