@@ -94,3 +94,89 @@ int main()
 派生类从基类中继承过来的成员（函数，变量）可能和派生类部分成员重名。
 1.前面提到，派生类从基类中继承了基类作用域，所以同成员名变量可以靠作用域区分开（隐藏）。
 2.同名成员函数则有三种关系：重载、隐藏和覆盖。
+
+**1.重载_overload**
+函数重载有三个条件，一函数名相同，二形参类型、个数、顺序不同，三相同作用域。根据第三个条件，可知函数重载只可能发生在一个类中，见下：
+
+```c++
+class Base
+{
+public:
+		Base(int a)
+		{
+			ma = a;
+		}
+		
+		void show()
+		{
+			cout << "base show 1" << endl;
+		}
+		
+		void show(int b)
+		{
+			cout << "base show 2" << endl;
+		}
+		
+private:
+	int ma;
+};
+```
+其中，两个show函数构成函数重载。
+
+**2.函数隐藏_overhide**
+在派生类中将基类中的同名成员方法隐藏，要想在派生类对象中访问基类同名成员得加上基类作用域。（注意，如果该同名方法在基类中实现了重载，在派生类中同样需要指定作用域，而不能通过简单得传参，调用带参重载方法）
+
+```c++
+#include <iostream>
+using namespace std;
+
+class Base
+{
+public:
+		Base(int a)
+		{
+			ma = a;
+		}
+		
+		void show()
+		{
+			cout << "base show 1" << endl;
+		}
+		
+		void show(int b)
+		{
+			cout << "base show 2" << endl;
+		}
+		
+private:
+	int ma;
+};
+
+class Derive : public Base
+{
+public:
+	Derive(int b) : Base(b)
+	{
+		mb = b;
+	}
+	
+	void show()
+	{
+		cout << "derive show 1" << endl;
+	}
+	
+private:
+	int mb;
+};
+
+int main()
+{
+	Derive d(1);
+	d.show();
+	d.Base::show();
+	d.Base::show(2);
+	
+	return 0;
+}
+```
+
