@@ -192,4 +192,82 @@ int main()
 - 1.1 派生类对象可以赋值给基类对象
 - 1.2 基类对象不可以赋值给基类对象   
 
-   
+![enter description here](./images/1566789174469.png)
+
+对于基类对象和派生类对象，编译器默认支持从下到上的转换，上是基类，下是派生类。
+
+![enter description here](./images/1566789348083.png)
+
+**2.基类指针（引用）和派生类指针（引用）**
+- 2.1基类指针（引用）可以指向派生类对象，但只能访问派生类中基类部分的方法，不能访问派生类部分方法
+- 2.2派生类指针（引用）不可以指向基类对象，解引用可能出错，因为派生类的一些方法可能基类没有
+
+![enter description here](./images/1566790292638.png)
+
+编译器只支持从上到下的转换，即只能允许基类指针去指向派生类类对象。
+
+![enter description here](./images/1566796922397.png)
+
+以上对于方法的访问都是基于指针的类型。我们可以看一下基类和派生类的大小，以及基类，派生类的指针（引用）的类型。
+
+```c++
+#include <iostream>
+using namespace std;
+
+class Base
+{
+	public:
+	Base(int a = 1)
+	{
+		ma = a;
+	}
+	
+	void show()
+	{
+		cout << "base show 1" << endl;
+	}
+	
+	void show(int b)
+	{
+		cout << "base show 2" << endl;
+	}
+	
+private:
+	int ma;
+}
+
+class Derive : public Base
+{
+public:
+	Derive(int b = 2) : Base(b)
+	{
+		mb = b;
+	}
+	
+	void show()
+	{
+		cout << "derive show 1" << endl;
+	}
+	
+private:
+	int mb;
+}
+
+int main()
+{
+	Base b;
+	Derive d;
+	
+	Base * p = &d;
+	
+	cout << "base size" << sizeof(b) << endl;
+	cout << "derive size" << sizeof(d) << endl;
+	cout << "p type" << typeid(p).name() << endl;
+	cout << "*p type" << typeid(*p).name() << endl;
+	return 0;
+}
+```
+
+![运行结果](./images/1566807752591.png)
+
+分析：Base类和Derive类的大小就是他们各自包含的成员变量的总大小，Derive类继承了Base类中的成员变量，所以要比Base类大4个字节。在上面提到，这里的方法调用都是依据指针的类型，所以我们可以看到对基类指针p解引用得到的类型只和指针本身的类型相关。
