@@ -276,4 +276,66 @@ int main()
 
 #### 虚函数
 
-首先，我们看一下当Base* 指向
+首先，我们看一下当Base* 指向Derive对象时，而Base类中含有虚函数时，基类和派生类大小、基类和派生类指针(引用)的类型。
+
+```c++
+#include <typeinfo>
+using namespace std;
+
+class Base
+{
+public:
+	Base(int a = 1)
+	{
+		ma = a;
+	}
+
+	virtual void show()
+	{
+		cout<<"base show 1"<<endl;
+	}
+
+	void show(int b)
+	{
+		cout<<"base show 2"<<endl;
+	}
+
+private:
+	int ma;
+};
+
+ 
+
+class Derive : public Base
+{
+public:
+	Derive(int b = 2):Base(b)
+	{
+		mb = b;
+	}
+
+	void show()
+	{
+		cout<<"derive show 1"<<endl;
+	}
+
+private:
+	int mb;
+};
+
+int main()
+{
+	Base b;
+	Derive d;
+	Base* p = &d;
+
+	cout<<"base size:"<<" "<<sizeof(b)<<endl;
+	cout<<"derive size:"<<" "<<sizeof(d)<<endl;
+	cout<<"p type:"<<" "<<typeid(p).name()<<endl;
+	cout<<"*p type:"<<" "<<typeid(*p).name()<<endl;
+	return 0;
+}
+
+```
+
+![运行结果](./images/1566921450033.png)
