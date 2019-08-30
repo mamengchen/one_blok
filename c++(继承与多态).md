@@ -446,4 +446,182 @@ RTTI又称为 “运行时多态” ， 当基类中实现了虚函数时，基�
 
 **5.2 动态绑定（运行时多态）**
 
-“运行时多态” 和指针、引用调用方法相关，前提是该方法是虚函数。用基类指针指向基类对象，基类指针指向派生类对象和派生类指针指向派生类对象（引用同理），通过该指针或引用调用虚函数时，会发生多态---访问指针指向对象的虚函数表，找到对应方法的地址，最后调用。
+“运行时多态” 和指针、引用调用方法相关，前提是该方法是虚函数。用基类指针指向基类对象，基类指针指向派生类对象和派生类指针指向派生类对象（引用同理），通过该指针或引用调用虚函数时，会发生多态---访问指针指向对象的虚函数表，找到对应方法的地址，最后调用。用对象本身去调用方法（包括虚函数）时不会发生多态。
+
+```c++
+#include <iostream>
+#include <typeinfo>
+using namespace std;
+
+class Base
+{
+public:
+		Base(int a = 1)
+		{
+			ma = a;
+		}
+		
+		virtual void show()
+		{
+			cout << "base show 1" << endl;
+		}
+		
+		virtual int getnum()
+		{
+			return ma;
+		}
+private:
+		int ma;
+}
+
+class Derive : public Base
+{
+public:
+		Derive(int b = 2) : Base(b)
+		{
+			mb = b;
+		}
+		
+		void show()
+		{
+			cout << "derive show 1" << endl;
+		}
+		
+		virtual int getval()
+		{
+			return mb;
+		}
+
+private:
+		int mb;
+}
+
+int main()
+{
+	Base b;
+	Derive d;
+	
+	Base* p = &d;
+	
+	cout << "*p type: " << typeid(*p).name() << endl;
+	p->show();
+	return 0;
+}
+```
+
+![运行结果](./images/20180523221205525.png)
+
+**6.抽象类和纯虚函数**
+
+纯虚函数没有具体的实现，含有纯虚函数的类称为 “抽象类” 。 抽象类不能实例化对象，只能作为基类，派生类可以继承抽象类，对抽象类中的纯虚函数实现函数重写覆盖。
+
+**7.析构函数之虚函数**
+
+前面我们探讨了哪些不能实现虚函数的情况，析构函数是可以的。那么什么时候应该将析构函数实现为虚函数尼？答案是：当基类指针指向堆上开辟的派生类对象时。
+
+```c++
+class Base
+{
+public:
+	Base(int a = 1)
+	{
+		ma = a;
+		cout<<"Base"<<endl;		
+	}
+
+	virtual ~Base()
+	{
+		cout<<"~Base"<<endl;
+	}
+
+private:
+	int ma;
+};
+
+class Derive : public Base
+{
+public:
+	Derive(int b = 2):Base(b)
+	{
+		mb = b;
+		cout<<"Derive"<<endl;
+	}
+
+	~Derive()
+	{
+		cout<<"~Derive"<<endl;
+	}
+
+private:
+	int mb;
+};
+
+int main()
+{
+	Base* p = new Derive(2);
+	delete p;
+	return 0;
+}
+```
+
+![运行结果](./images/20180523225451348.png)
+
+
+**8.派生类中有虚函数指针，基类中没有虚函数指针时，使基类指针指向派生类对象（new），delete基类指针时引发的一系列问题**
+
+```c++
+class Base
+{
+public:
+	Base(int a = 1)
+	{
+		ma = a;
+		cout<<"Base"<<endl;		
+	}
+
+	~Base()
+	{
+		cout<<"~Base"<<endl;
+	}
+
+private:
+	int ma;
+};
+
+class Derive : public Base
+{
+public:
+	Derive(int b = 2):Base(b)
+	{
+		mb = b;
+		cout<<"Derive"<<endl;
+	}
+
+	~Derive()
+	{
+		cout<<"~Derive"<<endl;
+	}
+
+private:
+	int mb;
+};
+
+int main()
+{
+	Base* p = new Derive(2);
+	delete p;
+	return 0;
+}
+```
+
+![运行结果](./images/20180523230649880_1.png)
+
+new返回给基类的指针并不是派生类对象的起始地址，而是派生类对象中基类成员开始的地址，最后delete基类指针时的地址 != 派生类对象的起始地址（new是从哪里开始分配内存的，就从哪里开始回收delete），因而析构派生类部分时出错。
+
+![20180523231337184](./images/20180523231337184.png)
+
+因此，应避免这种情况，一定要将基类中的析构函数实现为虚函数，基类中也存在虚函数表，之后delete时就会发生析构函数的动多态，正确释放空间
+
+**9.虚函数表的写入时间**
+
+在编译期间，虚函数表
