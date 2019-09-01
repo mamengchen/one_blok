@@ -624,4 +624,115 @@ new返回给基类的指针并不是派生类对象的起始地址，而是派�
 
 **9.虚函数表的写入时间**
 
-在编译期间，虚函数表
+在编译期间，虚函数表中已经将虚函数的地址写好，并把虚函数表的地址写到对象虚函数指针当中
+例如以下：
+
+```c++
+class Base
+{
+public:
+	Base(int a) : ma(a)
+	{
+		clear();
+	}
+	
+	virtual ~Base() {}
+	
+	void clear()
+	{
+		memset(this, 0, sizeof(*this));
+	}
+	
+	virtual void show()
+	{
+		cout << "Base:: " << ma << endl;
+	}
+	
+private:
+	int mb;
+};
+
+int main()
+{
+	Base* p = new Base(10);
+	p->show();
+	delete p;
+	
+	return 0;
+}
+```
+
+执行结果如下：
+
+![enter description here](./images/1567343914815.png)
+
+执行p->show()时出错了？因为发生运行时多态时，clear()将基类对象整个内存都置为0，此时基类的虚函数指针存储的是0x00000000，虚表找不到，则show()函数的地址也找不到，调用出错！
+
+那么，下面的代码可以执行成功吗？
+
+```c++
+class Base
+{
+public:
+	Base(int a) : ma(a)
+	{
+		clear();
+	}
+	
+	virtual ~Base() {}
+	
+	void clear()
+	{
+		memset(this, 0, sizeof(*this));
+	}
+	
+	virtual void show()
+	{
+		cout << "Base:: " << ma << endl;
+	}
+	
+private:
+
+	int ma;
+};
+
+class Derive : public Base
+{
+public:
+	Derive(int b) : Base(b),mb(b)
+	{}
+	
+	~Derive(){}
+	
+	void show()
+	{
+		cout << "Derive:: " << mb << endl;
+	}
+	
+private:
+	int mb;
+};
+
+int main()
+{
+	Base* p = new Derive(10);
+	p->show();
+	delete p;
+	
+	return 0;
+}
+```
+
+![enter description here](./images/1567346814575.png)
+
+为什么这下就执行成功了呢？不是已经把虚函数指针置零了吗？
+
+派生类对象的构造过程是怎么的？先构造基类部分在构造派生类部分。在构造基类部分时，会将虚函数指针和虚表都初始化好，在这里构造完之后就紧接着clear()置零了，但是后续还要构造派生类部分！这个过程会重写虚函数指针，指针指向了Derive类对应的虚函数表，虚函数指针值由“0x00000000”改变成一个有效值。既然派生类对象中有一个有效的虚函数指针，那么p->show()当然就能成功。
+
+**10. 静态绑定和动态绑定的时间**
+
+我们已经明确地知道：静态绑定发生在编译阶段，动态绑定发生在运行阶段。
+
+**10.1 构造函数和析构函数中能不能实现动多态**
+
+在之前地讨论中
