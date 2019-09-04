@@ -859,3 +859,50 @@ int main()
 2. 运行期期间，限定符不发挥作用，因为找到虚函数表中对应的虚函数地址后，直接“call 函数地址”。
 
 **10.3 将基类虚函数放入protected或private中， 利用基类指针调用该方法，编译能通过吗？**
+
+```c++
+class Base
+{
+public:
+	Base(int a):ma(a){}
+	virtual ~Base(){}	
+
+protected:
+	virtual void show()
+	{
+		cout<<"Base::"<<ma<<endl;
+	}
+	int ma;
+};
+
+class Derive : public Base
+{
+public:
+
+	Derive(int b):Base(b),mb(b){}
+	~Derive(){}
+	void show()
+	{
+		cout<<"Derive::"<<mb<<endl;
+	}
+
+private:
+	int mb;
+};
+
+int main()
+{
+	Base* p = new Derive(10);
+	p->show();
+	delete p;
+	return 0;
+}
+
+```
+
+![20180528001345578](./images/20180528001345578.png)
+
+编译不能通过。就如10.3中所说，编译阶段访问限定符发挥着作用。Base类中的show()的限定符为protected，这意味着对外界不可见，只有本身和子类可以访问，Base::show()对Base* p不可见，因此编译错误。
+
+
+**10.4 当基类虚函数带有默认值，派生类同名虚函数也带有不同默认值时，通过基类指针调用派生类该方法时，默认值究竟是哪个？**
