@@ -906,3 +906,49 @@ int main()
 
 
 **10.4 当基类虚函数带有默认值，派生类同名虚函数也带有不同默认值时，通过基类指针调用派生类该方法时，默认值究竟是哪个？**
+
+```c++
+class Base{
+public: 
+	Base(int a):ma(a) {}
+	
+	virtual ~Base() {}
+	
+	virtual void show(int a = 30) {
+		cout << "Base:: " << a << endl;
+	}
+	
+private:
+	int ma;
+};
+
+class Derive : public Base
+{
+public:
+	Derive(int b) : Base(b), mb(b) {}
+	~Derive() {}
+	void show(int b = 80)
+	{
+		cout << "Derive:: " << b << endl;
+	}
+private:
+	int mb;
+};
+
+int main()
+{
+	Base* p = new Derive(10);
+	p->show();
+	
+	delete p;
+	return 0;
+}
+```
+
+![enter description here](./images/1567696777486.png)
+
+最后得知，Derive::show()中的默认值变为了基类同名方法的默认值，为什么呢？   
+
+因为，在编译阶段，调用函数之前需要压参数，参数有默认值的话，压入的就是确切的值。,main函数中 Base*-->Derive::show()，此时在产生的汇编代码中，压入的参数就是Base::show()中的默认值30，在运行阶段发生多态调用Derive中的方法，执行的还是这段汇编代码，即得到的默认值还是30。    
+
+总的来说，在编译期间，函数默认值、是否可调用该函数、虚函数指针和虚表的内容都可以确定下来。
