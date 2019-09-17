@@ -181,3 +181,14 @@ string类型是二进制安全的，意思是redis的string可以包含任何数
 - 缓存：经典使用场景，把常用信息，字符串，图片或者视频等信息放到redis中，redis作为缓存层、MySQL做持久化层，降低MySQL的读写压力。
 - 计数器：Redis是单线程模型，一个命令执行完才会执行下一个，同时数据可以一步落地到其他的数据源。
 - 比如想知道什么时候封锁一个ip地址（访问超过几次）。INCRBY命令让这些变得很容易，通过原子递增保持计数。
+
+
+----------
+#### Hash
+是一个Mapmap，指值本身又是一种键值对结构，如value={{field1，value1},...fieldN，valueN}}
+
+![enter description here](./images/1568735483145.png)
+
+常用命令：所有hash的命令都是 h 开头的hget、hset 、hdel、hgetall等
+
+![untitled](./images/untitled.png)
