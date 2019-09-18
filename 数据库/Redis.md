@@ -192,3 +192,87 @@ string类型是二进制安全的，意思是redis的string可以包含任何数
 常用命令：所有hash的命令都是 h 开头的hget、hset 、hdel、hgetall等
 
 ![untitled](./images/untitled.png)
+
+实战场景：比如我们要存储一个用户的信息，包括以下信息：
+- 用户ID，为查找的key
+- 存储的value用户对象包含姓名name，年龄age，生日birthday等信息
+
+如果以普通的key/value结构存储，主要有以下两种存储方式：
+
+第一种方式将用户id作为key，其他信息封装成对象以序列化的方式存储，如 set u0001 “李三， 18， 20010101”
+
+这种方式的缺点，增加了序列化/反序列化的开销；需要修改其中一项信息时，需要把整个对象取回，修改操作需要对并发进行保护，引入CAS等复杂问题。
+
+第二种方式是这个用户信息有多少成员就存成多少个key-value对，虽然省去了序列化开销和并发问题，但是用户ID为重复存储，如果存在大量这样的数据，内存浪费较大。
+
+Redis提供的hash就很好的解决了这个问题，Redis的hash实际是内部存储的value为一个HashMap，并且提供了直接存取这个map的成员接口。
+
+
+----------
+#### List
+List说白了就是链表（redis使用双端链表实现的List），是有序的，value可以重复，可以通过下标取出对应的value值，左右两边都能进行插入和删除数据。
+
+![enter description here](./images/1568808846317.png)
+
+使用链表的技巧
+- lpush+lpop = Stack（栈）
+- lpush+rpop = Queue（队列）
+- lpush+ltrim = Capped Collection（有限集合）
+- lpush + brpop = Message Queue（消息队列）
+
+常用命令：lpush，rpush，lpop，rpop，lrange，BLPOP（阻塞版）等。
+
+![enter description here](./images/1568808986223.png)
+
+应用场景：
+- TimeLine：例如微博的时间轴，有人发布微博，用lpush加入时间轴，展示新的列表信息。
+- 消息队列。利用Lists的push的操作，将任务存储在list中，然后工作线程再用pop操作将任务取出进行执行。
+
+
+----------
+#### Set
+Set类似List，特殊之处是Set可以自动排重。
+
+Set还提供了某个成员是否在一个Set内的接口，这个也是List没有的。
+
+比如在微博应用中，每个人的好友存在一个集合（Set）中，这样求两个人的共同好友的操作，可能只需要用求交集命令即可。
+
+Redis还为集合提供了求交集，并集，差集等操作。
+
+![enter description here](./images/1568809341646.png)
+
+常用命令都是以s开头的：sadd，srem，spop，sdiff，smembers，sismember等。
+
+![enter description here](./images/1568809397256.png)
+
+实战场景：
+- 标签（tag）：给用户添加标签，或者用户给消息添加标签，这样有同一标签或者类似标签的可以给推荐关注的事或者关注的人。
+- 点赞、或投币，收藏等，可以放到Set中实现。
+
+
+----------
+#### Sort Set(Zset)
+有序集合和集合有着必然的联系，保留了集合不能有重复成员的特性，区别是，有序集合中的元素是可以排序的，Sorted set可以通过用户额外提供一个优先级（score）的参数来为成员排序，并且是插入有序的，即自动排序。
+
+![enter description here](./images/1568809730706.png)
+
+有序集合的命令都是以Z开头：zadd、zrange、zscore
+
+![enter description here](./images/1568809775362.png)
+
+实战场景：
+- 排行榜：有序集合经典使用场景。例如小说视频等网站需要对用户上传的小说视频做排行榜，榜单可以按照用户关注数，更新时间，字数等打分，做排行。
+
+
+----------
+#### Redis的持久化机制：RDB和AOF
+
+Redis提供了两种方式对数据进行持久化，分别是RDB和AOF。
+
+RDB持久化方式能够在指定的时间间隔能对你的数据进行快照存储。
+
+AOF持久化方式记录每次对服务器写的操作，当服务器重启的时候会重新执行这些命令来恢复原始的数据，AOF命令以Redis协议追加保存每次写的操作到文件末尾。Redis还能对AOF文件进行后台重写，使得AOF文件的体积不至于过大。
+
+如果你只希望你的数据在服务器运行的时候存在，你也可以不使用任何持久化方式。
+也可以同时开启两种持久化方式，在这种情况下，当Redis重启的时候会优先载入AOF文件来恢复原始的数据，因为在通常情况下AOF文件保存的数据集要比RDB文件保存的数据集要完整。
+
