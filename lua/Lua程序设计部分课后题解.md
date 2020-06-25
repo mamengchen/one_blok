@@ -117,4 +117,62 @@ print(t.sunday, t[sunday], t[t.sunday]);
 运行结果为：monday	sunday	sunday：<font style="background"></font>
 
 **5.2：如下代码： a = {}; a.a = a : a.a.a.a 的值是什么？**
-是一样的，都是指向这个表：类似如图过程
+是一样的，都是指向这个表：类似如图过程::
+![介绍a.a.a.a过程](./images/1593103721414.png)
+如果给a.a.a.a赋值会产生一个错误，原有是因为3是number类型而非表
+
+**5.4: 在lua语言中，我们可以使用由系数组成的列表{a0, a1, .... , an}来表达多项式
+```lua
+function ans_s(t,x)
+    local sp = t[1];
+    for i=2,#t do
+        sp = sp + t[i] * x^(i-1)
+    end
+    return sp;
+end
+
+// 没有使用指数运算
+function ans_s( t, x )
+    local sp = t[1];
+    local dp = x;
+    for i = 2,#t do
+        sp = sp + t[1]*dp;
+        dp = dp * x;
+    end
+    return sp;
+end
+```
+
+**5.6: 编写一个函数，该函数测试指定的表是否为有效的序列**
+判断一个表是否是序列使用ipairs和pairs判断。当ipairs遇到nil就会停止，而且它会跳过价值对顺序输出table中的值。pairs除了值为nil的不输出，剩下都输出，没有键的数字补
+```lua
+local a = {"Hello", "World", a = 1, b = 2, x = 10, y = 20, "Good", nil, "Bye"}
+for i,v in ipairs(a) do
+    print(v)
+end
+print("----------".."俺是分割线".."-------------------")
+for k,v in pairs(a) do
+    print(k,v)
+end
+```
+![运行结果，用来看ipairs和pairs区别](./images/1593107503006.png)
+所以当这两个输出的值都相同则是序列或者循环的次数
+```
+function ispair( t )
+    local x,y;
+    for i in pairs(t) do
+        x = i;
+    end
+    print(x);
+    for i in ipairs(t) do
+        y = i;
+    end
+    print(y);
+    if x ~= y then
+        return false;
+    else
+        return true;
+    end
+end
+```
+
