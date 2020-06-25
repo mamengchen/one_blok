@@ -108,4 +108,13 @@ print(myispali("banana"))
 ```
 
 ### 第五章：表
-**5.1:下面
+**5.1:下列代码输出是什么？为什么？**
+> sunday = "monday";
+monday = "sunday";
+t = {sunday = "monday", [sunday] = monday};
+print(t.sunday, t[sunday], t[t.sunday]);
+
+运行结果为：monday	sunday	sunday：<font style="background"></font>
+
+**5.2：如下代码： a = {}; a.a = a : a.a.a.a 的值是什么？**
+是一样的，都是指向这个表：类似如图过程
