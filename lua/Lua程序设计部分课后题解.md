@@ -175,4 +175,31 @@ function ispair( t )
     end
 end
 ```
+**5.7 编写一个函数，该函数将指定列表的所有元素插入到另一个列表的指定位置。**
+> 因为在lua5.1 中没有move函数则使用两个版本
+```lua
+-- 5.1版本：
+function movetable(t1,t2,n)
+    t3 = {};
+    for i = 1,n do
+        table.insert( t3,t2[i] );
+    end
+    for i in ipairs(t1) do
+        table.insert( t3,t1[i] );
+    end
+    for i = n+1,#t2 do 
+        table.insert( t3,t2[i] );
+    end
+    for i in ipairs(t3) do 
+        print(t3[i]);
+    end
+end
+
+movetable({1,2,9},{1,2,3},1);
+-- 5.3版本：
+function movetable(t1,t2,n)
+  table.move(t1,1,#t1,n,t2)
+  return t2
+end
+```
 
