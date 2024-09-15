@@ -352,3 +352,11 @@ Redis的一些特性在分区方面表现的不是很好：
 从上面的图我们可以看出来跳表要有序的链表，然后往上构建索引，这样可以jump
 
 ![enter description here](./images/1725971059214.png)
+### 代码说明
+节点结构：Node 结构体包含一个整数键值 key，以及一个 forward 向量，用来存储各层的下一个节点指针。
+跳表结构：SkipList 类封装了跳表的操作，包含查找、插入和删除功能。
+随机层数生成：通过 randomLevel() 函数模拟掷硬币的过程，随机生成新插入节点的层数。
+查找操作：search 函数在多级索引中进行搜索，逐层跳跃，从最上层到最底层。
+插入操作：insert 函数根据搜索路径逐层插入新节点，并更新相关指针。
+删除操作：erase 函数删除节点并更新相关指针。
+[一个简单的跳表实现](https://github.com/mamengchen/-Data_Structure/tree/master/JumpList)
