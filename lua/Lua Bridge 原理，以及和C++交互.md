@@ -75,3 +75,28 @@ Lua 中，对虚拟栈提供正向索引和反向索引两种索引方式，区�
    - GCObject* next：指向下一个垃圾回收对象的指针，用于将所有的垃圾回收对象连接成一个链表。这是Lua垃圾回收机制的基础。
    - lu_byte tt：对象的类型标识符，表示当前对象的类型（如表，字符串，函数等）。
    - lu_byte marked：用于垃圾回收标记的状态字段，表示对象的当前标记状态。
+
+**GCObject的作用**
+GCObject 本身是一个头部结构，用于在Lua的垃圾回收系统中统一管理各种Lua对象。(主要用于下面几类的管理)
+ ```c
+1. table(表)
+typedef struct Table {
+	GCObject gch;
+	TValue* array;
+	int sizearray; 
+ } Table;
+ 
+2. String(字符串)
+typedef struct TString {
+	GCObject gch;
+	size_t len;
+	char data[1];
+} TString;
+
+3.Fucntion
+typedef struct LClosure {
+	GCObject gch;
+	Proto* p;
+	UpVal* upvals[1];
+} LClosure;
+ ```
