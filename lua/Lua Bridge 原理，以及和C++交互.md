@@ -100,3 +100,4 @@ typedef struct LClosure {
 	UpVal* upvals[1];
 } LClosure;
  ```
+ 在每种类型的对象中，GCObject头部的存在使得Lua的垃圾回收器能够对所有对象执行一致的回收操作。
