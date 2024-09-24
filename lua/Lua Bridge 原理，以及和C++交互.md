@@ -22,7 +22,21 @@ Lua 中，对虚拟栈提供正向索引和反向索引两种索引方式，区�
 
 ![游戏：C/C++与Lua交互](./images/1725221883437.png)
 
-## C++ 调用Lua函数
+## C++ 调用Lua函数（Lua 调用 C++）
+**Lua可以调用C++定义，实现具体的函数**：
+1. 将C++的函数包装成Lua环境认可的Lua_CFunction格式。
+2. 将包装好的函数注册到Lua环境中
+3. 像使用普通Lua函数那样使用注册函数
+
+包装 C++ 函数，为了从Lua脚本中调用 C++ 函数，需要将被调用的 C++ 函数从普通的 C++ 函数包装成 Lua_CFunction 格式，并需要在函数中将返回值压入栈中，并返回返回值个数。
+```c++
+int (*lua_CFunction) (lua_State* L);
+
+// c++ 函数
+int add(int a, int b) {
+return a+b;
+}
+```
 
 
 ## Lua 源码分析
