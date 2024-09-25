@@ -36,6 +36,14 @@ int (*lua_CFunction) (lua_State* L);
 int add(int a, int b) {
 return a+b;
 }
+// 包装为
+int add(lua_state *L) {
+	int a = lua_tonumber(-1);
+	int b = lua_tonumber(-2);
+	int sum = a+b;
+	lua_pushnumber(L, sum);
+	return 1;
+}
 ```
 
 
