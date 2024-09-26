@@ -45,7 +45,7 @@ int add(lua_state *L) {
 	return 1;
 }
 ```
-
+[lua与C++交互实例](https://github.com/mamengchen/-mudou/tree/main/TestLuaCode)
 
 ## Lua 源码分析
 
