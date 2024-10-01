@@ -32,6 +32,25 @@ Lua的特性：它是一门轻量级语言，它的官方版本只包括一个�
 | ltm.c      | 元方法                  |
 | lvm.c      | 虚拟机                  |
 | lzio.c     | 输入流接口              |
+**源代码解析和预编译、内嵌库**
+| 文件       | 作用                    |
+| ---------- | ----------------------- |
+| lcode.c    | 代码生成器              |
+| ldump.c    | 序列化预编译的Lua字节码 |
+| llex.c     | 词法分析器              |
+| lparser.c  | 解析器                  |
+| lundump.c  | 还原预编译的字节码      |
+| lauxlib.c  | 库编写用到的辅助函数库  |
+| lbaselib.c | 基础库                  |
+| ldblib.c   | Debug库                 |
+| linit.c    | 内嵌库的初始化          |
+| liolib.c   | IO 库                   |
+| lmathlib.c | 数学库                  |
+| loadlib.c  | 动态扩展库管理          |
+| loslib.c   | OS 库                   |
+| lstrlib.c  | 字符串库                |
+| ltablib.c  | 表处理库                |
+
 
 
 ## Lua与其他宿主语言交互的桥梁-栈
