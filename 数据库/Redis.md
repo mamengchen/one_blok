@@ -359,4 +359,4 @@ Redis的一些特性在分区方面表现的不是很好：
 查找操作：search 函数在多级索引中进行搜索，逐层跳跃，从最上层到最底层。
 插入操作：insert 函数根据搜索路径逐层插入新节点，并更新相关指针。
 删除操作：erase 函数删除节点并更新相关指针。
-[一个简单的跳表实现](https://github.com/mamengchen/-Data_Structure/tree/master/JumpList)
+[一个简单的跳表实现](https://github.com/mamengchen/-Data_Structure/tree/master/JumpList) 
